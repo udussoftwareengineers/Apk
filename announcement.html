@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Announcement Board</title>
+    <style>
+        /* General Page Styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url('https://www.transparenttextures.com/patterns/wood-pattern.png') no-repeat center center/cover;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* School Logo */
+        .logo {
+            width: 100px;
+            margin-bottom: 10px;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        /* Notice Board Styling */
+        .notice-board {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            border: 5px solid #ffcc00;
+            animation: slideIn 1.5s ease-in-out;
+        }
+
+        .notice-board h1 {
+            font-size: 35px;
+            text-transform: uppercase;
+            font-weight: bold;
+            animation: glow 1.5s infinite alternate, blinkText 1s infinite;
+            color: #ffcc00;
+        }
+
+        /* Glowing & Blinking Text Animation */
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #fff, 0 0 10px #ffeb3b, 0 0 15px #ffeb3b; }
+            to { text-shadow: 0 0 10px #fff, 0 0 20px #ffeb3b, 0 0 30px #ffeb3b; }
+        }
+
+        @keyframes blinkText {
+            50% { opacity: 0; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* Current Date & Time */
+        .date-time {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        /* Realistic Announcement Section */
+        .announcement {
+            background: white;
+            color: black;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.4;
+            font-weight: bold;
+            border-left: 5px solid red;
+            margin-top: 15px;
+            animation: fadeIn 2s ease-in-out;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        /* Countdown Timer */
+        .countdown {
+            font-size: 18px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        /* Smooth Fade-in Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- School Logo -->
+    <img src="UDUS.png" alt="School Logo" class="logo">
+
+    <!-- Current Date & Time -->
+    <div class="date-time" id="date-time"></div>
+
+    <!-- Notice Board -->
+    <div class="notice-board">
+        <h1>NOTICE! NOTICE!!</h1>
+        <div class="announcement">
+            <h2>📢 Important Announcements:</h2>
+            <ul>
+                <li><span style="color: red;">Exams start on March 10, 2025.</span> Prepare well.</li>
+                <li><span style="color: blue;">No school on February 25, 2025.</span> (Public Holiday).</li>
+                <li><span style="color: green;">School fees deadline: March 5, 2025.</span> Pay on time.</li>
+                <li><span style="color: purple;">New uniforms available.</span> Visit the admin office.</li>
+                <li>📌 **For inquiries, visit the principal's office.**</li>
+            </ul>
+        </div>
+        <div class="countdown">⏳ Event Countdown: <span id="timer"></span></div>
+    </div>
+
+    <script>
+        // Play Sound on Page Load
+        window.onload = function() {
+            let audio = new Audio("https://www.fesliyanstudios.com/play-mp3/4389");
+            audio.play();
+        };
+
+        // Countdown Timer (Event on March 10, 2025)
+        function updateCountdown() {
+            let eventDate = new Date("March 10, 2025 00:00:00").getTime();
+            let now = new Date().getTime();
+            let difference = eventDate - now;
+
+            let days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            let hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            document.getElementById("timer").innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        setInterval(updateCountdown, 1000);
+
+        // Update Date & Time
+        function updateDateTime() {
+            let now = new Date();
+            let options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            document.getElementById("date-time").innerHTML = now.toLocaleDateString("en-US", options);
+        }
+
+        setInterval(updateDateTime, 1000);
+    </script>
+
+</body>
+</html>

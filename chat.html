@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-container {
+      width: 400px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    #chat-box {
+      height: 300px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 10px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      background-color: #f9f9f9;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+    }
+
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #send-button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #send-button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <h1>Chat with Your Friend</h1>
+    <div id="chat-box"></div>
+    <div class="input-container">
+      <input type="text" id="message-input" placeholder="Type a message...">
+      <button id="send-button">Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCt-bCNYfA1dPX9uzARgbFZGbwPBngfglU",
+      authDomain: "deepseek-64e0b.firebaseapp.com",
+      projectId: "deepseek-64e0b",
+      storageBucket: "deepseek-64e0b.firebasestorage.app",
+      messagingSenderId: "60783782920",
+      appId: "1:60783782920:web:907262c3179aeaafdf75bd",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // DOM elements
+    const chatBox = document.getElementById("chat-box");
+    const messageInput = document.getElementById("message-input");
+    const sendButton = document.getElementById("send-button");
+
+    // Function to add a message to the chat box
+    function addMessageToChatBox(message, sender) {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("message");
+      messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll to the latest message
+    }
+
+    // Function to send a message
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message !== "") {
+        try {
+          // Add a new message to the Firestore collection
+          await addDoc(collection(db, "messages"), {
+            text: message,
+            sender: "You", // Replace with user authentication later
+            timestamp: serverTimestamp(),
+          });
+          console.log("Message sent successfully!");
+          messageInput.value = ""; // Clear the input field
+        } catch (error) {
+          console.error("Error sending message:", error);
+        }
+      }
+    }
+
+    // Listen for new messages
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    onSnapshot(q, (snapshot) => {
+      chatBox.innerHTML = ""; // Clear the chat box before adding messages
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        addMessageToChatBox(data.text, data.sender);
+      });
+    });
+
+    // Event listeners
+    sendButton.addEventListener("click", sendMessage);
+    messageInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>

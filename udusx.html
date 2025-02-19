@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .chat-container {
+      width: 400px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    #chat-box {
+      height: 300px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 10px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      background-color: #f9f9f9;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+    }
+
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #send-button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #send-button:hover {
+      background-color: #0056b3;
+    }
+
+    .message {
+      padding: 8px;
+      background: #e3f2fd;
+      border-radius: 5px;
+      margin: 5px 0;
+      position: relative;
+    }
+
+    .timestamp {
+      font-size: 12px;
+      color: gray;
+      display: block;
+      text-align: right;
+    }
+
+    .delete-btn {
+      cursor: pointer;
+      color: red;
+      font-size: 12px;
+      position: absolute;
+      top: 5px;
+      right: 10px;
+    }
+
+    .reactions-container {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .reaction-btn {
+      font-size: 16px;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 5px;
+      background-color: #eee;
+    }
+
+    .reaction-btn:hover {
+      background-color: #ddd;
+    }
+
+    .reaction-count {
+      font-size: 14px;
+      margin-left: 5px;
+      color: #444;
+    }
+
+    /* Back button styling */
+    #back-button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 10px;
+      display: block;
+      width: 100%;
+    }
+
+    #back-button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <button onclick="window.location.href='udus.html'" id="back-button">Back</button>
+    <h1> Software Engineers X</h1>
+    <div id="chat-box"></div>
+    <div class="input-container">
+      <input type="text" id="message-input" placeholder="Type a message...">
+      <button id="send-button">Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, deleteDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCt-bCNYfA1dPX9uzARgbFZGbwPBngfglU",
+      authDomain: "deepseek-64e0b.firebaseapp.com",
+      projectId: "deepseek-64e0b",
+      storageBucket: "deepseek-64e0b.firebasestorage.app",
+      messagingSenderId: "60783782920",
+      appId: "1:60783782920:web:907262c3179aeaafdf75bd",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Get Username from localStorage
+    let username = localStorage.getItem("chat-username");
+    if (!username) {
+      username = prompt("Enter your username:");
+      localStorage.setItem("chat-username", username);
+    }
+
+    // DOM elements
+    const chatBox = document.getElementById("chat-box");
+    const messageInput = document.getElementById("message-input");
+    const sendButton = document.getElementById("send-button");
+
+    // Function to format timestamp
+    function formatTimestamp(timestamp) {
+      if (!timestamp) return "Just now";
+      const date = timestamp.toDate();
+      return date.toLocaleString();
+    }
+
+    // Function to add a message to the chat box
+    function addMessageToChatBox(id, message, sender, timestamp, reactions = {}) {
+      const messageElement = document.createElement("div");
+      messageElement.classList.add("message");
+      messageElement.innerHTML = `
+        <strong>${sender}:</strong> ${message}
+        <span class="timestamp">${formatTimestamp(timestamp)}</span>
+        ${sender === username ? `<span class="delete-btn" data-id="${id}">DELETE</span>` : ""}
+        <div class="reactions-container">
+          <span class="reaction-btn" data-id="${id}" data-reaction="👍">👍</span>
+          <span class="reaction-btn" data-id="${id}" data-reaction="❤️">❤️</span>
+          <span class="reaction-btn" data-id="${id}" data-reaction="😂">😂</span>
+          <span class="reaction-count" id="reaction-count-${id}"></span>
+        </div>
+      `;
+
+      chatBox.appendChild(messageElement);
+      updateReactionCount(id, reactions);
+      chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
+    }
+
+    // Function to update reaction counts
+    function updateReactionCount(messageId, reactions) {
+      const reactionCountElement = document.getElementById(`reaction-count-${messageId}`);
+      if (!reactionCountElement) return;
+
+      const counts = {};
+      Object.values(reactions).forEach((reaction) => {
+        counts[reaction] = (counts[reaction] || 0) + 1;
+      });
+
+      reactionCountElement.innerHTML = Object.entries(counts)
+        .map(([emoji, count]) => `${emoji} x${count}`)
+        .join(" ");
+    }
+
+    // Function to send a message
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (message !== "") {
+        try {
+          await addDoc(collection(db, "messages"), {
+            text: message,
+            sender: username,
+            timestamp: serverTimestamp(),
+            reactions: {},
+          });
+          messageInput.value = ""; // Clear input
+        } catch (error) {
+          console.error("Error sending message:", error);
+        }
+      }
+    }
+
+    // Function to delete a message
+    async function deleteMessage(id) {
+      const confirmDelete = confirm(`${username}, do you want to delete this your chat?`);
+      if (confirmDelete) {
+        await deleteDoc(doc(db, "messages", id));
+      }
+    }
+
+    // Function to toggle reaction
+    async function toggleReaction(messageId, reaction) {
+      const messageRef = doc(db, "messages", messageId);
+      const messageSnapshot = await getDoc(messageRef);
+
+      if (messageSnapshot.exists()) {
+        let reactions = messageSnapshot.data().reactions || {};
+
+        // If the user already reacted, change it; otherwise, set a new reaction
+        reactions[username] = reactions[username] === reaction ? null : reaction;
+        if (reactions[username] === null) delete reactions[username]; // Remove reaction
+
+        await updateDoc(messageRef, { reactions });
+      }
+    }
+
+    // Listen for new messages
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    onSnapshot(q, (snapshot) => {
+      chatBox.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        addMessageToChatBox(doc.id, data.text, data.sender, data.timestamp, data.reactions);
+      });
+    });
+
+    // Event listeners
+    sendButton.addEventListener("click", sendMessage);
+    chatBox.addEventListener("click", async (e) => {
+      if (e.target.classList.contains("delete-btn")) deleteMessage(e.target.dataset.id);
+      if (e.target.classList.contains("reaction-btn")) toggleReaction(e.target.dataset.id, e.target.dataset.reaction);
+    });
+  </script>
+</body>
+</html>
